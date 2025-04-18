@@ -1,13 +1,13 @@
 # Site setings
-name: 'Srikanth'
-description: 'Developer'
+name: 'Srikanth Ethiraj'
+description: 'Simplifying complexity. Scaling innovation.'
 meta_description: 'Empowering engineering teams with automated, secure, and scalable systems.'
 logo:
 # Author image is used in site sidebar and greetings in the home page hero text
 author:
   image: 'authorimage.jpg'
   greetings: "Empowering engineering teams with automated, secure, and scalable systems."
-favicon: 'assets/images/favicon.ico'
+favicon: 'assets/images/initials.png'
 baseurl: 
 production_url: https://blog.srikanthethiraj.com/
 disqus: 'justgoodthemes'
@@ -17,19 +17,19 @@ ga_analytics:
 
 # Contact form setings
 email: srikanth.ethiraj@gmail.com
-contact_page_description: "Horace theme comes with a contact form built-in. You can use this form with Formspree service and get up to 50 submissions for free. Also, you can easily switch to another service if you want."
+#contact_page_description: "Horace theme comes with a contact form built-in. You can use this form with Formspree service and get up to 50 submissions for free. Also, you can easily switch to another service if you want."
 thankyou_page_description: "Your message has been successfully sent. We will contact you very soon!"
 
 # Social links
-twitter: 'justgoodthemes'
+twitter: 'srikanthethiraj'
 #facebook: 'username'
-github: 'justgoodthemes'
+github: 'srikantheee84'
 #codepen: 'username'
 #dribbble: 'username'
 #medium: '@username'
-instagram: 'username'
-pinterest: 'username'
-linkedin: 'username'
+instagram: 'srikanthethiraj'
+pinterest: 'srikanthethiraj'
+linkedin: 'srikanthethiraj'
 #producthunt: '@username'
 #quora: 'username'
 
@@ -39,8 +39,8 @@ navigation:
     url: /
   - text: About
     url: /about
-  - text: Style Guide
-    url: /style-guide
+  # - text: Style Guide
+  #   url: /style-guide
   - text: Contact Me
     url: /contact
   - text: Search
