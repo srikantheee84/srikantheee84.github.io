@@ -1,12 +1,12 @@
 # Site setings
 name: 'Srikanth Ethiraj'
-description: 'Simplifying complexity. Scaling innovation.'
-meta_description: 'Empowering engineering teams with automated, secure, and scalable systems.'
+description: 'Building AI applications on AWS — one project at a time.'
+meta_description: 'Hands-on series on building AI applications with Amazon Bedrock, RAG, and Python.'
 logo:
 # Author image is used in site sidebar and greetings in the home page hero text
 author:
   image: 'authorimage.jpg'
-  greetings: "Empowering engineering teams with automated, secure, and scalable systems."
+  greetings: "Building AI applications on AWS — one project at a time."
 favicon: 'assets/images/initials.png'
 baseurl: 
 production_url: https://blog.srikanthethiraj.com/
