@@ -5,8 +5,8 @@
     <description>Building AI applications on AWS — one project at a time.</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sat, 11 Apr 2026 13:24:25 -0500</pubDate>
-    <lastBuildDate>Sat, 11 Apr 2026 13:24:25 -0500</lastBuildDate>
+    <pubDate>Mon, 13 Apr 2026 15:10:35 -0500</pubDate>
+    <lastBuildDate>Mon, 13 Apr 2026 15:10:35 -0500</lastBuildDate>
     <generator>Jekyll v4.4.1</generator>
     
       <item>
@@ -35,7 +35,7 @@
 
 &lt;p&gt;The system is a five-component pipeline. Each component has a single job. The orchestrator wires them together.&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;/assets/images/posts/2026/insurance-claim-processor-architecture.png&quot; alt=&quot;Insurance Claim Processor Architecture&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/assets/images/posts/2026/article-1-architecture.png&quot; alt=&quot;Insurance Claim Processor Architecture&quot; /&gt;&lt;/p&gt;
 
 &lt;ul&gt;
   &lt;li&gt;&lt;strong&gt;Prompt Template Manager&lt;/strong&gt; — reusable prompts with variable substitution&lt;/li&gt;

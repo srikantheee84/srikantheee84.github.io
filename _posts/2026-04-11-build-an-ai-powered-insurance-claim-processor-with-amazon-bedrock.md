@@ -32,7 +32,7 @@ Same approach works for medical records, legal contracts, invoices, support tick
 
 The system is a five-component pipeline. Each component has a single job. The orchestrator wires them together.
 
-![Insurance Claim Processor Architecture](/assets/images/posts/2026/insurance-claim-processor-architecture.png)
+![Insurance Claim Processor Architecture](/assets/images/posts/2026/article-1-architecture.png)
 
 - **Prompt Template Manager** — reusable prompts with variable substitution
 - **Model Invoker** — Bedrock calls with retry and latency tracking
