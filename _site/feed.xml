@@ -5,8 +5,8 @@
     <description>Building AI applications on AWS — one project at a time.</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Mon, 13 Apr 2026 15:10:35 -0500</pubDate>
-    <lastBuildDate>Mon, 13 Apr 2026 15:10:35 -0500</lastBuildDate>
+    <pubDate>Mon, 13 Apr 2026 17:05:31 -0500</pubDate>
+    <lastBuildDate>Mon, 13 Apr 2026 17:05:31 -0500</lastBuildDate>
     <generator>Jekyll v4.4.1</generator>
     
       <item>
@@ -98,11 +98,11 @@ After:     &quot;SSN: [REDACTED]&quot;
 &lt;p&gt;You can run the same claim through multiple models side-by-side:&lt;/p&gt;
 
 &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Model                                    Latency     Output     Status
-amazon.titan-text-express-v1              1243ms  512 chars         OK
-amazon.titan-text-lite-v1                  892ms  387 chars         OK
+amazon.nova-lite-v1:0                      705ms  539 chars         OK
+amazon.nova-micro-v1:0                     517ms  527 chars         OK
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;p&gt;Express gives more detailed output. Lite is faster and cheaper. This comparison helps you pick the right model for production.&lt;/p&gt;
+&lt;p&gt;Nova Lite gives more detailed output. Nova Micro is faster and cheaper. This comparison helps you pick the right model for production.&lt;/p&gt;
 
 &lt;h2 id=&quot;getting-started&quot;&gt;Getting Started&lt;/h2&gt;
 
@@ -115,7 +115,7 @@ python3 &lt;span class=&quot;nt&quot;&gt;-m&lt;/span&gt; venv venv
 pip &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-r&lt;/span&gt; requirements.txt
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;p&gt;Before running, enable model access in the AWS Console: Amazon Bedrock → Model access → enable Titan Text G1 Express and Lite. Create an S3 bucket:&lt;/p&gt;
+&lt;p&gt;Before running, enable model access in the AWS Console: Amazon Bedrock → Model access → enable Nova Lite and Nova Micro. Create an S3 bucket:&lt;/p&gt;
 
 &lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;aws s3 mb s3://your-bucket-name &lt;span class=&quot;nt&quot;&gt;--region&lt;/span&gt; us-east-1
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
