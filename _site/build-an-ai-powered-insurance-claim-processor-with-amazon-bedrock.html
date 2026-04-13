@@ -272,11 +272,11 @@ After:     "SSN: [REDACTED]"
 <p>You can run the same claim through multiple models side-by-side:</p>
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Model                                    Latency     Output     Status
-amazon.titan-text-express-v1              1243ms  512 chars         OK
-amazon.titan-text-lite-v1                  892ms  387 chars         OK
+amazon.nova-lite-v1:0                      705ms  539 chars         OK
+amazon.nova-micro-v1:0                     517ms  527 chars         OK
 </code></pre></div></div>
 
-<p>Express gives more detailed output. Lite is faster and cheaper. This comparison helps you pick the right model for production.</p>
+<p>Nova Lite gives more detailed output. Nova Micro is faster and cheaper. This comparison helps you pick the right model for production.</p>
 
 <h2 id="getting-started">Getting Started</h2>
 
@@ -289,7 +289,7 @@ python3 <span class="nt">-m</span> venv venv
 pip <span class="nb">install</span> <span class="nt">-r</span> requirements.txt
 </code></pre></div></div>
 
-<p>Before running, enable model access in the AWS Console: Amazon Bedrock → Model access → enable Titan Text G1 Express and Lite. Create an S3 bucket:</p>
+<p>Before running, enable model access in the AWS Console: Amazon Bedrock → Model access → enable Nova Lite and Nova Micro. Create an S3 bucket:</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>aws s3 mb s3://your-bucket-name <span class="nt">--region</span> us-east-1
 </code></pre></div></div>
