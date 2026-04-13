@@ -97,11 +97,11 @@ You can run the same claim through multiple models side-by-side:
 
 ```
 Model                                    Latency     Output     Status
-amazon.titan-text-express-v1              1243ms  512 chars         OK
-amazon.titan-text-lite-v1                  892ms  387 chars         OK
+amazon.nova-lite-v1:0                      705ms  539 chars         OK
+amazon.nova-micro-v1:0                     517ms  527 chars         OK
 ```
 
-Express gives more detailed output. Lite is faster and cheaper. This comparison helps you pick the right model for production.
+Nova Lite gives more detailed output. Nova Micro is faster and cheaper. This comparison helps you pick the right model for production.
 
 ## Getting Started
 
@@ -115,7 +115,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Before running, enable model access in the AWS Console: Amazon Bedrock → Model access → enable Titan Text G1 Express and Lite. Create an S3 bucket:
+Before running, enable model access in the AWS Console: Amazon Bedrock → Model access → enable Nova Lite and Nova Micro. Create an S3 bucket:
 
 ```bash
 aws s3 mb s3://your-bucket-name --region us-east-1
