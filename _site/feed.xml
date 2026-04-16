@@ -5,9 +5,223 @@
     <description>Building AI applications on AWS — one project at a time.</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Mon, 13 Apr 2026 17:05:31 -0500</pubDate>
-    <lastBuildDate>Mon, 13 Apr 2026 17:05:31 -0500</lastBuildDate>
+    <pubDate>Thu, 16 Apr 2026 14:46:40 -0500</pubDate>
+    <lastBuildDate>Thu, 16 Apr 2026 14:46:40 -0500</lastBuildDate>
     <generator>Jekyll v4.4.1</generator>
+    
+      <item>
+        <title>Build a Financial Services AI Assistant with Amazon Bedrock</title>
+        <description>&lt;p&gt;In Part 1, we built an insurance claim processor — your first real AI app with Bedrock. We called models, built prompt templates, and compared outputs side by side. Useful for learning, but not how you’d run things in production.&lt;/p&gt;
+
+&lt;p&gt;Now we’re leveling up. Part 1’s &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;compare_models&lt;/code&gt; becomes a proper benchmarking framework. The simple retry loop becomes a circuit breaker that falls back to a different model and degrades gracefully when everything fails.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;h2 id=&quot;the-problem&quot;&gt;The Problem&lt;/h2&gt;
+
+&lt;p&gt;Part 1’s approach had gaps. Picking a model by eyeballing two outputs doesn’t scale. Retrying the same failing model three times doesn’t help if the model is down. Changing models means editing code and redeploying. A regional outage takes your whole service offline.&lt;/p&gt;
+
+&lt;p&gt;This project fixes all of that.&lt;/p&gt;
+
+&lt;h2 id=&quot;the-pattern&quot;&gt;The Pattern&lt;/h2&gt;
+
+&lt;p&gt;This project teaches a resilience pattern that applies to any AI application:&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Benchmark → Select → Invoke → Fallback → Degrade Gracefully&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;Same architecture works for healthcare chatbots, legal document analysis, customer support. The resilience patterns are the same.&lt;/p&gt;
+
+&lt;h2 id=&quot;architecture&quot;&gt;Architecture&lt;/h2&gt;
+
+&lt;p&gt;The system accepts customer queries through API Gateway, dynamically selects the best Bedrock model based on benchmark scores, and uses a Step Functions circuit breaker for fault tolerance. Cross-region deployment via CloudFormation and Route 53 provides regional resilience.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/posts/2026/article-2-architecture.png&quot; alt=&quot;Financial Services AI Assistant Architecture&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Key components:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;Benchmarking Framework — scores models on quality, latency, and cost with configurable weights&lt;/li&gt;
+  &lt;li&gt;Model Selector — picks the best model using AppConfig weights (changeable at runtime, no redeployment)&lt;/li&gt;
+  &lt;li&gt;Lambda Abstraction Layer — uniform interface for invoking any supported Bedrock model&lt;/li&gt;
+  &lt;li&gt;Circuit Breaker — Step Functions workflow: primary → fallback → graceful degradation&lt;/li&gt;
+  &lt;li&gt;Cross-Region Deployment — CloudFormation + Route 53 failover routing&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;how-it-works&quot;&gt;How It Works&lt;/h2&gt;
+
+&lt;p&gt;When a customer query comes in, it flows through a resilient pipeline designed to always return a response.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;API Gateway.&lt;/strong&gt; POST &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/query&lt;/code&gt; validates the request and passes it to the circuit breaker.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Model Selection.&lt;/strong&gt; The Model Selector picks the best model based on benchmark scores and AppConfig weights. Default weights: quality 50%, latency 30%, cost 20%. Change them at runtime — no deployment needed.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Primary Attempt.&lt;/strong&gt; The Lambda abstraction layer invokes the top-ranked model via Bedrock’s Converse API. On success, the response goes back to the client.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Fallback.&lt;/strong&gt; If the primary model fails, the circuit breaker invokes a different fallback model. Not the same model again — a different one.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Graceful Degradation.&lt;/strong&gt; If both models fail, the system returns a friendly message with a phone number and a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Retry-After&lt;/code&gt; header. The customer always gets a response.&lt;/p&gt;
+
+&lt;h2 id=&quot;the-benchmarking-framework&quot;&gt;The Benchmarking Framework&lt;/h2&gt;
+
+&lt;p&gt;Before serving any queries, you benchmark your models. The framework runs each model against financial services test prompts and scores responses on three dimensions:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Completeness — are all expected fields present?&lt;/li&gt;
+  &lt;li&gt;Relevance — does the response address the prompt topic?&lt;/li&gt;
+  &lt;li&gt;Coherence — is the response well-structured and readable?&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;These combine into a quality score. Then a weighted scorer applies configurable weights across quality, latency, and cost to produce a final ranking.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Model                          Quality      Latency       Cost      Score
+amazon.nova-lite-v1:0            0.782       1243ms  $0.000180      0.714
+amazon.nova-micro-v1:0           0.695        687ms  $0.000098      0.723
+
+Winner: amazon.nova-micro-v1:0 (weighted score: 0.723)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Nova Micro wins here — faster and cheaper, and the quality gap isn’t big enough to overcome the latency and cost advantages with the default weights.&lt;/p&gt;
+
+&lt;h2 id=&quot;the-circuit-breaker&quot;&gt;The Circuit Breaker&lt;/h2&gt;
+
+&lt;p&gt;Part 1’s &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ModelInvoker&lt;/code&gt; retried the same model 3 times. If the model was down, you were stuck.&lt;/p&gt;
+
+&lt;p&gt;The circuit breaker is smarter. It’s a Step Functions Express workflow with three outcomes:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Primary model ──success──► Return response
+      │
+    failure
+      │
+Fallback model ──success──► Return response
+      │
+    failure
+      │
+Graceful degradation ──► &quot;Please call 1-800-XXX-XXXX&quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The customer always gets a response. Always.&lt;/p&gt;
+
+&lt;h2 id=&quot;dynamic-configuration-with-appconfig&quot;&gt;Dynamic Configuration with AppConfig&lt;/h2&gt;
+
+&lt;p&gt;In Part 1, changing models meant editing code. Here, model selection weights live in AWS AppConfig:&lt;/p&gt;
+
+&lt;div class=&quot;language-json highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;primary_model_id&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;amazon.nova-lite-v1:0&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;fallback_model_id&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;amazon.nova-micro-v1:0&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;weights&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;quality&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;0.5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;latency&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;0.3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;cost&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;0.2&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Want to prioritize speed over quality? Update the weights. The next request uses the new config. No deployment needed.&lt;/p&gt;
+
+&lt;h2 id=&quot;sagemaker-fine-tuning&quot;&gt;SageMaker Fine-Tuning&lt;/h2&gt;
+
+&lt;p&gt;The base Nova models give generic responses. For financial services, you want the assistant to know your products, compliance language, and dispute resolution procedures.&lt;/p&gt;
+
+&lt;p&gt;The fine-tuning pipeline takes a JSONL training dataset (minimum 100 prompt/completion pairs of your domain-specific Q&amp;amp;A), validates the format, and kicks off a SageMaker training job. When the job completes, the fine-tuned model is automatically registered with the Model Selector — it gets included in future benchmark runs and can be selected as the primary model.&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;python3 demo.py &lt;span class=&quot;nt&quot;&gt;--region&lt;/span&gt; us-east-1 &lt;span class=&quot;nt&quot;&gt;--bucket&lt;/span&gt; your-training-data-bucket
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;what-changed-from-part-1&quot;&gt;What Changed from Part 1&lt;/h2&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Concept&lt;/th&gt;
+      &lt;th&gt;Part 1&lt;/th&gt;
+      &lt;th&gt;Part 2&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Model comparison&lt;/td&gt;
+      &lt;td&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;compare_models&lt;/code&gt; — eyeball two outputs&lt;/td&gt;
+      &lt;td&gt;Benchmarking framework with weighted scoring&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Error handling&lt;/td&gt;
+      &lt;td&gt;Retry same model 3 times&lt;/td&gt;
+      &lt;td&gt;Circuit breaker: primary → different fallback → degradation&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Configuration&lt;/td&gt;
+      &lt;td&gt;Hardcoded model IDs&lt;/td&gt;
+      &lt;td&gt;AppConfig — change at runtime&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Deployment&lt;/td&gt;
+      &lt;td&gt;Single region, run locally&lt;/td&gt;
+      &lt;td&gt;CloudFormation cross-region + Route 53 failover&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Model customization&lt;/td&gt;
+      &lt;td&gt;Use models as-is&lt;/td&gt;
+      &lt;td&gt;SageMaker fine-tuning pipeline&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&quot;getting-started&quot;&gt;Getting Started&lt;/h2&gt;
+
+&lt;p&gt;Prerequisites: Python 3.10+, an AWS account with Bedrock access, AWS CLI configured. If you completed Part 1, you’re already set up.&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;git clone https://github.com/srikanthethiraj/financial-ai-assistant.git
+&lt;span class=&quot;nb&quot;&gt;cd &lt;/span&gt;financial-ai-assistant
+python3 &lt;span class=&quot;nt&quot;&gt;-m&lt;/span&gt; venv venv
+&lt;span class=&quot;nb&quot;&gt;source &lt;/span&gt;venv/bin/activate
+pip &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-r&lt;/span&gt; requirements.txt
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Enable Nova Lite and Nova Micro in the Bedrock console (Model access), then run:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;python3 demo.py &lt;span class=&quot;nt&quot;&gt;--region&lt;/span&gt; us-east-1
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;You’ll see the full flow — benchmark, select, query, and circuit breaker demo with normal, fallback, and degradation scenarios.&lt;/p&gt;
+
+&lt;h2 id=&quot;whats-next&quot;&gt;What’s Next&lt;/h2&gt;
+
+&lt;p&gt;This is Part 2 of a six-part series. Each project builds on the last:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;Part 1&lt;/strong&gt; — &lt;a href=&quot;https://blog.srikanthethiraj.com/build-an-ai-powered-insurance-claim-processor-with-amazon-bedrock&quot;&gt;Insurance Claim Processor&lt;/a&gt;: Bedrock basics, prompt templates, simple RAG&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Part 2&lt;/strong&gt; — Financial Services AI Assistant (this post): benchmarking, circuit breakers, cross-region resilience&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Part 3&lt;/strong&gt; — Customer Feedback Pipeline: multimodal data processing (text, images, audio)&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Part 4&lt;/strong&gt; — Knowledge Base RAG System: vector stores, embeddings, document chunking&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Part 5&lt;/strong&gt; — Advanced Search &amp;amp; Retrieval: hybrid search, reranking, query expansion&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Part 6&lt;/strong&gt; — AI Support Assistant with Governance: guardrails, prompt management, conversation flows&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;In Part 3, we move beyond text-only processing and build a pipeline that handles text, images, audio, and surveys — feeding them all into foundation models.&lt;/p&gt;
+
+&lt;p&gt;Repository: &lt;a href=&quot;https://github.com/srikanthethiraj/financial-ai-assistant&quot;&gt;github.com/srikanthethiraj/financial-ai-assistant&lt;/a&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;&lt;em&gt;I’m Srikanth — a cloud engineer at AWS based in Austin, Texas. I learn by building, and I write about what I build. Follow along on this blog or connect with me on &lt;a href=&quot;https://www.linkedin.com/in/srikanthethiraj/&quot;&gt;LinkedIn&lt;/a&gt;.&lt;/em&gt;&lt;/p&gt;
+</description>
+        <pubDate>Thu, 16 Apr 2026 00:00:00 -0500</pubDate>
+        <link>http://localhost:4000/build-a-financial-services-ai-assistant-with-amazon-bedrock</link>
+        <guid isPermaLink="true">http://localhost:4000/build-a-financial-services-ai-assistant-with-amazon-bedrock</guid>
+        
+        <category>AI</category>
+        
+        <category>AWS</category>
+        
+        <category>Python</category>
+        
+        <category>Bedrock</category>
+        
+        <category>Lambda</category>
+        
+        <category>StepFunctions</category>
+        
+        
+      </item>
     
       <item>
         <title>Build an AI-Powered Insurance Claim Processor with Amazon Bedrock</title>

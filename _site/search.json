@@ -1,6 +1,14 @@
 [
   
     {
+      "title"    : "Build a Financial Services AI Assistant with Amazon Bedrock",
+      "category" : "",
+      "tags"     : "AI, AWS, Python, Bedrock, Lambda, StepFunctions",
+      "url"      : "/build-a-financial-services-ai-assistant-with-amazon-bedrock",
+      "date"     : "April 16, 2026"
+    } ,
+  
+    {
       "title"    : "Build an AI-Powered Insurance Claim Processor with Amazon Bedrock",
       "category" : "",
       "tags"     : "AI, AWS, Python, Bedrock, RAG",

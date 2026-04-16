@@ -4,7 +4,7 @@ title: "Build an AI-Powered Insurance Claim Processor with Amazon Bedrock"
 tags: [AI, AWS, Python, Bedrock, RAG]
 featured_image_thumbnail:
 featured_image: assets/images/posts/2019/laptop.jpg
-featured: true
+featured: false
 hidden: false
 ---
 
