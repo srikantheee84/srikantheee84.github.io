@@ -1,6 +1,14 @@
 [
   
     {
+      "title"    : "Build a Customer Feedback Pipeline with Amazon Bedrock",
+      "category" : "",
+      "tags"     : "AI, AWS, Python, Bedrock, Comprehend, Textract, Transcribe",
+      "url"      : "/build-a-customer-feedback-pipeline-with-amazon-bedrock",
+      "date"     : "April 20, 2026"
+    } ,
+  
+    {
       "title"    : "Build a Financial Services AI Assistant with Amazon Bedrock",
       "category" : "",
       "tags"     : "AI, AWS, Python, Bedrock, Lambda, StepFunctions",

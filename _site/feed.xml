@@ -5,9 +5,287 @@
     <description>Building AI applications on AWS — one project at a time.</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 16 Apr 2026 14:46:40 -0500</pubDate>
-    <lastBuildDate>Thu, 16 Apr 2026 14:46:40 -0500</lastBuildDate>
+    <pubDate>Sun, 19 Apr 2026 22:16:48 -0500</pubDate>
+    <lastBuildDate>Sun, 19 Apr 2026 22:16:48 -0500</lastBuildDate>
     <generator>Jekyll v4.4.1</generator>
+    
+      <item>
+        <title>Build a Customer Feedback Pipeline with Amazon Bedrock</title>
+        <description>&lt;p&gt;In Part 2, we built a financial services AI assistant with benchmarking, circuit breakers, and cross-region resilience. All of it processed one data type: text.&lt;/p&gt;
+
+&lt;p&gt;Real customer feedback doesn’t come in one format. It arrives as written reviews, photos of damaged products, phone call recordings, and survey responses. This project builds a pipeline that handles all of them — validates the data, routes each type to the right AWS AI service, and feeds everything into Amazon Nova Lite for unified analysis.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;h2 id=&quot;the-problem&quot;&gt;The Problem&lt;/h2&gt;
+
+&lt;p&gt;Most AI demos work with clean text. Real customer feedback is messy. A retail company might receive an email complaint, a photo of a broken item, a voicemail, and a post-purchase survey — all about the same product issue.&lt;/p&gt;
+
+&lt;p&gt;Part 1’s &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ContentValidator&lt;/code&gt; checked for missing fields and redacted PII. That’s fine for structured text. But what do you do with an image? An audio file? A survey with Likert scales and free-text comments?&lt;/p&gt;
+
+&lt;p&gt;You need a pipeline that validates data quality across all types, routes each record to the right processor, and brings everything together for analysis.&lt;/p&gt;
+
+&lt;h2 id=&quot;the-pattern&quot;&gt;The Pattern&lt;/h2&gt;
+
+&lt;p&gt;This project teaches a pattern for handling diverse data types in AI applications:&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Ingest → Validate → Route → Process per modality → Format → Analyze&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;Same approach works for medical intake (forms, X-rays, doctor notes), insurance claims (documents, photos, phone calls), or product reviews (text, images, video). The modalities change. The pattern doesn’t.&lt;/p&gt;
+
+&lt;h2 id=&quot;architecture&quot;&gt;Architecture&lt;/h2&gt;
+
+&lt;p&gt;The pipeline follows a processor-per-modality design. Each data type gets its own processor backed by a purpose-built AWS AI service. Results converge into a single Bedrock Converse API call for unified analysis.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/posts/2026/article-3-architecture.png&quot; alt=&quot;Customer Feedback Pipeline Architecture&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Key components:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;Data Validator — Glue Data Quality rules for completeness, uniqueness, freshness&lt;/li&gt;
+  &lt;li&gt;Quality Scorer — Lambda function for text-specific quality scoring&lt;/li&gt;
+  &lt;li&gt;Text Processor — Amazon Comprehend for entity extraction and sentiment analysis&lt;/li&gt;
+  &lt;li&gt;Image Processor — Amazon Textract for text extraction, Rekognition for label detection&lt;/li&gt;
+  &lt;li&gt;Audio Processor — Amazon Transcribe for speech-to-text with speaker labels&lt;/li&gt;
+  &lt;li&gt;Survey Processor — SageMaker Processing for survey data transformation&lt;/li&gt;
+  &lt;li&gt;Bedrock Formatter — Converts all processing results into Converse API messages&lt;/li&gt;
+  &lt;li&gt;Quality Monitor — CloudWatch metrics, dashboards, and alarms&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;how-the-pipeline-works&quot;&gt;How the Pipeline Works&lt;/h2&gt;
+
+&lt;p&gt;Eight steps. Each record flows through validation, gets routed by type, processed by the right service, and fed into Bedrock for analysis.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Ingest.&lt;/strong&gt; Feedback records are built from sample data — text reviews and survey responses defined in code, plus image and audio files discovered automatically from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;samples/images/&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;samples/audio/&lt;/code&gt;. Each record has a customer ID, timestamp, channel, and the payload.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Validate.&lt;/strong&gt; Every record passes through Glue Data Quality rules. Three checks: completeness (all required fields present), uniqueness (no duplicate record IDs in the batch), and freshness (timestamp within the last 90 days). Records that fail are flagged and skipped.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Score.&lt;/strong&gt; Text records that pass structural validation get an additional quality check. A Lambda function scores text on length, word count, and content quality. Short or empty reviews get filtered out before they waste model invocations.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Route.&lt;/strong&gt; Valid records are directed to the appropriate processor based on their &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;data_type&lt;/code&gt; field. Text goes to Comprehend. Images go to Textract and Rekognition. Audio goes to Transcribe. Surveys go to SageMaker Processing.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Process.&lt;/strong&gt; Each processor extracts structured information from its modality:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;Text → entities (people, organizations, dates) and sentiment (positive, negative, neutral, mixed)&lt;/li&gt;
+  &lt;li&gt;Images → extracted text from photos (OCR) and detected labels (objects, scenes)&lt;/li&gt;
+  &lt;li&gt;Audio → full transcript with speaker labels and timestamps&lt;/li&gt;
+  &lt;li&gt;Surveys → response distributions, mean scores, and free-text comments&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;Format.&lt;/strong&gt; Processing results are converted into Bedrock Converse API message format. Each modality has its own formatter that structures the data as conversation messages the model can understand.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Analyze.&lt;/strong&gt; All formatted messages are sent to Amazon Nova Lite in a single Converse API call. The model identifies themes across all feedback types, generates a sentiment summary, and produces actionable recommendations.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Monitor.&lt;/strong&gt; CloudWatch captures validation pass/fail rates, processing latency per modality, and error counts. Alarms fire when quality drops below thresholds.&lt;/p&gt;
+
+&lt;h2 id=&quot;data-validation--the-enterprise-version&quot;&gt;Data Validation — The Enterprise Version&lt;/h2&gt;
+
+&lt;p&gt;Part 1’s &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ContentValidator&lt;/code&gt; checked for missing fields and ran regex patterns for PII. It worked, but it was a Python class with hardcoded rules.&lt;/p&gt;
+
+&lt;p&gt;This project uses the same idea at enterprise scale. Glue Data Quality rules handle structural validation — completeness, uniqueness, freshness — in a declarative way. A Lambda quality scorer adds content-level checks for text records.&lt;/p&gt;
+
+&lt;p&gt;The validator processes records in batches. It tracks seen IDs to catch duplicates, checks timestamps against a 90-day freshness window, and publishes pass/fail metrics to CloudWatch after each batch.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Validation Results:
+  Total records:  12
+  Passed:          9
+  Failed:           3
+  Violations:      missing_customer_id (1), duplicate_id (1), stale_timestamp (1)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Records that pass structural validation but contain low-quality text (too short, gibberish) get caught by the quality scorer and marked &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;LOW_QUALITY&lt;/code&gt;. They’re still stored — just excluded from analysis.&lt;/p&gt;
+
+&lt;h2 id=&quot;processing-four-data-types&quot;&gt;Processing Four Data Types&lt;/h2&gt;
+
+&lt;p&gt;This is where the pipeline diverges from text-only systems.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Text — Amazon Comprehend.&lt;/strong&gt; Comprehend extracts entities and detects sentiment without any model training. A customer review mentioning “John at the Austin store” produces entities: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;PERSON: John&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;LOCATION: Austin&lt;/code&gt;. Sentiment comes back as a distribution — 85% positive, 10% neutral, 5% negative — not just a label.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Images — Textract + Rekognition.&lt;/strong&gt; Two services, two jobs. Textract runs OCR on photos — useful when customers photograph receipts, labels, or handwritten notes. Rekognition detects objects and scenes — a photo of a damaged package produces labels like &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Box&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Damage&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Cardboard&lt;/code&gt; with confidence scores. Both results feed into the analysis.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Audio — Amazon Transcribe.&lt;/strong&gt; Phone calls and voicemails are transcribed with speaker diarization. You don’t just get text — you get who said what and when. A support call produces segments: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Speaker 0: &quot;I&apos;ve been waiting for two weeks...&quot;&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Speaker 1: &quot;Let me look into that for you.&quot;&lt;/code&gt; The full transcript plus speaker labels go to Bedrock.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Surveys — SageMaker Processing.&lt;/strong&gt; Survey data is structured differently. Instead of extracting information, the processor computes statistics: response distributions per question, mean scores for numeric scales, and collects free-text responses. A satisfaction survey produces: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Q1 (Overall satisfaction): mean 3.2/5, distribution: {1: 5, 2: 8, 3: 12, 4: 15, 5: 10}&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;formatting-for-bedrock&quot;&gt;Formatting for Bedrock&lt;/h2&gt;
+
+&lt;p&gt;Each processor outputs a different data structure. The Bedrock Formatter converts all of them into Converse API messages.&lt;/p&gt;
+
+&lt;p&gt;Text results become a message with entities and sentiment. Image results become a message with extracted text and detected labels. Audio results become a conversation-style message with speaker segments. Survey results become a structured summary with statistics.&lt;/p&gt;
+
+&lt;p&gt;The Converse API accepts these as a list of messages in a single call. Nova Lite sees all the feedback together and can identify cross-modal patterns — a negative phone call about the same product that got bad survey scores and a photo of the defect.&lt;/p&gt;
+
+&lt;h2 id=&quot;example-output&quot;&gt;Example Output&lt;/h2&gt;
+
+&lt;p&gt;Running the pipeline against a mixed batch of customer feedback with real AWS services:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Customer Feedback Pipeline
+========================================
+
+Loading 38 sample records...
+  - 15 text reviews
+  - 7 images (receipts, shipping labels, feedback forms)
+  - 5 audio recordings (Polly-generated customer calls)
+  - 8 survey responses
+  - 3 invalid records (for validation demo)
+
+Validation:
+  Passed: 35/38
+  Failed: 3 (missing_customer_id, stale_timestamp, duplicate_id)
+
+Processing:
+  Text:    15 records → 23 entities, sentiment: 6 positive, 5 negative, 4 mixed
+  Images:   7 records → 569 text blocks, 30 labels
+  Audio:    5 records → 5 transcripts, 10 speaker segments
+  Surveys:  8 responses → 5 questions summarized, mean satisfaction 3.2/5
+
+Analysis (Nova Lite):
+  Themes:
+    1. Product quality and perceived value
+    2. Delivery and shipping issues
+    3. Customer support responsiveness and effectiveness
+    4. Warranty and return process clarity
+    5. Overall satisfaction and likelihood to recommend
+
+  Sentiment Summary:
+    Overall mixed sentiment. Many customers appreciate the product quality
+    and customer service, but significant frustration with delivery delays,
+    damaged products, and poor communication from support teams.
+
+  Recommendations:
+    1. Improve quality control to reduce defective products
+    2. Enhance communication regarding shipping delays
+    3. Train support staff to be more empathetic and proactive
+    4. Clarify warranty terms and simplify the return process
+    5. Act on customer feedback to continuously improve
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The model identified that shipping and packaging issues appeared across text reviews, photos, and phone calls — a pattern you’d miss if you only analyzed one data type.&lt;/p&gt;
+
+&lt;h2 id=&quot;what-changed-from-part-1&quot;&gt;What Changed from Part 1&lt;/h2&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Concept&lt;/th&gt;
+      &lt;th&gt;Part 1 (Insurance Claim Processor)&lt;/th&gt;
+      &lt;th&gt;Part 3 (This Project)&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;strong&gt;Data types&lt;/strong&gt;&lt;/td&gt;
+      &lt;td&gt;Text only&lt;/td&gt;
+      &lt;td&gt;Text, images, audio, surveys&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;strong&gt;Validation&lt;/strong&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ContentValidator&lt;/code&gt; — field checks + PII regex&lt;/td&gt;
+      &lt;td&gt;Glue Data Quality rules + Lambda quality scorer&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;strong&gt;AI services&lt;/strong&gt;&lt;/td&gt;
+      &lt;td&gt;Bedrock only&lt;/td&gt;
+      &lt;td&gt;Comprehend, Textract, Rekognition, Transcribe, SageMaker, Bedrock&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;strong&gt;Processing&lt;/strong&gt;&lt;/td&gt;
+      &lt;td&gt;Single pipeline for all documents&lt;/td&gt;
+      &lt;td&gt;Processor-per-modality with routing&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;strong&gt;Monitoring&lt;/strong&gt;&lt;/td&gt;
+      &lt;td&gt;None&lt;/td&gt;
+      &lt;td&gt;CloudWatch metrics, dashboards, alarms&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;strong&gt;Data quality&lt;/strong&gt;&lt;/td&gt;
+      &lt;td&gt;Pass/fail on required fields&lt;/td&gt;
+      &lt;td&gt;Completeness + uniqueness + freshness + content scoring&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&quot;getting-started&quot;&gt;Getting Started&lt;/h2&gt;
+
+&lt;p&gt;Prerequisites: Python 3.10+, an AWS account with Bedrock access, AWS CLI configured. If you completed Part 1 or Part 2, you’re already set up.&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;git clone https://github.com/srikanthethiraj/customer-feedback-pipeline.git
+&lt;span class=&quot;nb&quot;&gt;cd &lt;/span&gt;customer-feedback-pipeline
+python3 &lt;span class=&quot;nt&quot;&gt;-m&lt;/span&gt; venv venv
+&lt;span class=&quot;nb&quot;&gt;source &lt;/span&gt;venv/bin/activate
+pip &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-r&lt;/span&gt; requirements.txt
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Enable Nova Lite in the Bedrock console (Model access), then run:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;python3 demo.py
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;You’ll see the full pipeline — ingest, validate, route, process, format, analyze — against sample feedback data covering all four modalities. The demo discovers images from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;samples/images/&lt;/code&gt; and audio from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;samples/audio/&lt;/code&gt; automatically.&lt;/p&gt;
+
+&lt;p&gt;To run with real AWS services, first generate sample files and upload to S3:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;pip &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;Pillow
+python3 generate_samples.py &lt;span class=&quot;nt&quot;&gt;--with-polly&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--upload&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--bucket&lt;/span&gt; YOUR_BUCKET
+python3 demo.py &lt;span class=&quot;nt&quot;&gt;--use-aws&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--bucket&lt;/span&gt; YOUR_BUCKET &lt;span class=&quot;nt&quot;&gt;--region&lt;/span&gt; us-east-1
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Textract reads actual text from the generated document images. Transcribe converts real Polly-generated speech back to text. Comprehend analyzes the reviews. Nova Lite ties it all together.&lt;/p&gt;
+
+&lt;h2 id=&quot;deploy-to-aws&quot;&gt;Deploy to AWS&lt;/h2&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;./deploy.sh your-s3-bucket-name
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;This packages the Lambda functions, uploads artifacts to S3, and deploys the CloudFormation stack with all the processing infrastructure.&lt;/p&gt;
+
+&lt;h2 id=&quot;tear-down&quot;&gt;Tear Down&lt;/h2&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;aws cloudformation delete-stack &lt;span class=&quot;nt&quot;&gt;--stack-name&lt;/span&gt; customer-feedback-pipeline
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;whats-next&quot;&gt;What’s Next&lt;/h2&gt;
+
+&lt;p&gt;This is Part 3 of an ongoing series. Each project builds on the last:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;Part 1&lt;/strong&gt; — &lt;a href=&quot;https://blog.srikanthethiraj.com/build-an-ai-powered-insurance-claim-processor-with-amazon-bedrock&quot;&gt;Insurance Claim Processor&lt;/a&gt;: Bedrock basics, prompt templates, simple RAG&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Part 2&lt;/strong&gt; — &lt;a href=&quot;https://blog.srikanthethiraj.com/build-a-financial-services-ai-assistant-with-amazon-bedrock&quot;&gt;Financial Services AI Assistant&lt;/a&gt;: benchmarking, circuit breakers, cross-region resilience&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Part 3&lt;/strong&gt; — Customer Feedback Pipeline (this post): multimodal data processing (text, images, audio, surveys)&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Part 4&lt;/strong&gt; — Knowledge Base RAG System: vector stores, embeddings, document chunking&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Part 5&lt;/strong&gt; — Advanced Search &amp;amp; Retrieval: hybrid search, reranking, query expansion&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Part 6&lt;/strong&gt; — AI Support Assistant with Governance: guardrails, prompt management, conversation flows&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Part 7+&lt;/strong&gt; — Agentic AI, enterprise integration, AI safety, optimization, testing &amp;amp; evaluation&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;In Part 4, we take the in-memory &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;PolicyKnowledgeBase&lt;/code&gt; from Part 1 and replace it with real vector stores and embeddings using Amazon OpenSearch and Bedrock Knowledge Bases.&lt;/p&gt;
+
+&lt;p&gt;Repository: &lt;a href=&quot;https://github.com/srikanthethiraj/customer-feedback-pipeline&quot;&gt;github.com/srikanthethiraj/customer-feedback-pipeline&lt;/a&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;&lt;em&gt;I’m Srikanth — a cloud engineer at AWS based in Austin, Texas. I learn by building, and I write about what I build. Follow along on this blog or connect with me on &lt;a href=&quot;https://www.linkedin.com/in/srikanthethiraj/&quot;&gt;LinkedIn&lt;/a&gt;.&lt;/em&gt;&lt;/p&gt;
+</description>
+        <pubDate>Mon, 20 Apr 2026 00:00:00 -0500</pubDate>
+        <link>http://localhost:4000/build-a-customer-feedback-pipeline-with-amazon-bedrock</link>
+        <guid isPermaLink="true">http://localhost:4000/build-a-customer-feedback-pipeline-with-amazon-bedrock</guid>
+        
+        <category>AI</category>
+        
+        <category>AWS</category>
+        
+        <category>Python</category>
+        
+        <category>Bedrock</category>
+        
+        <category>Comprehend</category>
+        
+        <category>Textract</category>
+        
+        <category>Transcribe</category>
+        
+        
+      </item>
     
       <item>
         <title>Build a Financial Services AI Assistant with Amazon Bedrock</title>
@@ -185,7 +463,7 @@ pip &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;n
 
 &lt;h2 id=&quot;whats-next&quot;&gt;What’s Next&lt;/h2&gt;
 
-&lt;p&gt;This is Part 2 of a six-part series. Each project builds on the last:&lt;/p&gt;
+&lt;p&gt;This is Part 2 of an ongoing series. Each project builds on the last:&lt;/p&gt;
 
 &lt;ul&gt;
   &lt;li&gt;&lt;strong&gt;Part 1&lt;/strong&gt; — &lt;a href=&quot;https://blog.srikanthethiraj.com/build-an-ai-powered-insurance-claim-processor-with-amazon-bedrock&quot;&gt;Insurance Claim Processor&lt;/a&gt;: Bedrock basics, prompt templates, simple RAG&lt;/li&gt;
@@ -194,6 +472,7 @@ pip &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;n
   &lt;li&gt;&lt;strong&gt;Part 4&lt;/strong&gt; — Knowledge Base RAG System: vector stores, embeddings, document chunking&lt;/li&gt;
   &lt;li&gt;&lt;strong&gt;Part 5&lt;/strong&gt; — Advanced Search &amp;amp; Retrieval: hybrid search, reranking, query expansion&lt;/li&gt;
   &lt;li&gt;&lt;strong&gt;Part 6&lt;/strong&gt; — AI Support Assistant with Governance: guardrails, prompt management, conversation flows&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Part 7+&lt;/strong&gt; — Agentic AI, enterprise integration, AI safety, optimization, testing &amp;amp; evaluation&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;In Part 3, we move beyond text-only processing and build a pipeline that handles text, images, audio, and surveys — feeding them all into foundation models.&lt;/p&gt;
@@ -343,7 +622,7 @@ pip &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;n
 
 &lt;h2 id=&quot;whats-next&quot;&gt;What’s Next&lt;/h2&gt;
 
-&lt;p&gt;This is Part 1 of a six-part series. Each project builds on the last:&lt;/p&gt;
+&lt;p&gt;This is Part 1 of an ongoing series. Each project builds on the last:&lt;/p&gt;
 
 &lt;ul&gt;
   &lt;li&gt;&lt;strong&gt;Part 2&lt;/strong&gt; — Financial Services AI Assistant: model benchmarking, circuit breakers, cross-region resilience&lt;/li&gt;
@@ -351,6 +630,7 @@ pip &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;n
   &lt;li&gt;&lt;strong&gt;Part 4&lt;/strong&gt; — Knowledge Base RAG System: vector stores, embeddings, document chunking&lt;/li&gt;
   &lt;li&gt;&lt;strong&gt;Part 5&lt;/strong&gt; — Advanced Search &amp;amp; Retrieval: hybrid search, reranking, query expansion&lt;/li&gt;
   &lt;li&gt;&lt;strong&gt;Part 6&lt;/strong&gt; — AI Support Assistant with Governance: guardrails, prompt management, conversation flows&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Part 7+&lt;/strong&gt; — Agentic AI, enterprise integration, AI safety, optimization, testing &amp;amp; evaluation&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;In Part 2, we take the basic &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;compare_models&lt;/code&gt; from this project and build a proper benchmarking framework with dynamic model selection and fault tolerance.&lt;/p&gt;
